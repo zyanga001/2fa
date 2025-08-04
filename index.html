@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOTP 代码生成器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff; /* 白色背景 */
+            color: #374151; /* 深灰色文字 */
+        }
+        .code-display {
+            letter-spacing: 0.25em;
+            cursor: pointer;
+            text-shadow: 0 0 10px rgba(34, 197, 94, 0.3); /* 鲜艳的青绿色光晕 */
+        }
+        .progress-bar-container {
+            height: 6px;
+            width: 100%;
+            background-color: #e5e7eb; /* 进度条背景色 */
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 100%;
+            background-color: #22c55e; /* 鲜艳的青绿色进度条 */
+            transition: transform 1s linear;
+        }
+        .fade-out {
+            opacity: 0;
+            pointer-events: none;
+            max-height: 0;
+            margin-bottom: 0;
+            transition: opacity 0.3s ease-out, max-height 0.3s ease-out, margin-bottom 0.3s ease-out;
+        }
+        .fade-in {
+            opacity: 1;
+            pointer-events: auto;
+            max-height: 500px;
+            transition: opacity 0.3s ease-in, max-height 0.3s ease-in;
+        }
+        .flex-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        #message-box {
+            position: fixed; /* 使用 fixed 定位 */
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background-color: #22c55e; /* 绿色背景 */
+            color: #ffffff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .code-card {
+            background-color: #f3f4f6; /* 卡片背景色 */
+            border: 1px solid #d1d5db; /* 卡片边框 */
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
+        }
+        /* 批量模式下的卡片间距 */
+        #code-list .code-card:not(:first-child) {
+            margin-top: 1rem;
+        }
+        #input-section {
+            padding: 2rem;
+            background-color: #f3f4f6; /* 输入框区域背景色 */
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="flex-container">
+        <div id="main-card" class="max-w-md w-full relative transition-all duration-300">
+            <h1 id="page-title" class="text-3xl md:text-4xl font-bold text-center mb-6 text-gray-800">TOTP 代码生成器</h1>
+            
+            <div id="input-section">
+                <textarea id="secret-key-textarea" placeholder="请输入 Base32 密钥，每行一个"
+                    class="w-full h-24 p-3 bg-[#f3f4f6] border border-[#d1d5db] rounded-lg text-gray-800 placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-[#22c55e] transition duration-300"></textarea>
+            </div>
+
+            <!-- 动态内容区域 -->
+            <div id="dynamic-content" class="fade-out">
+                <button id="copy-all-button" class="w-full px-6 py-3 mt-4 mb-4 bg-[#22c55e] text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition duration-300 focus:outline-none focus:ring-2 focus:ring-[#22c55e] focus:ring-offset-2 focus:ring-offset-[#ffffff]">
+                    一键复制所有代码
+                </button>
+                <div id="code-list" class="space-y-4">
+                    <!-- 验证码卡片将动态插入这里 -->
+                </div>
+            </div>
+
+            <div id="message-box" class="hidden">
+                已复制到剪贴板！
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 获取所有需要的 DOM 元素
+            const mainCard = document.getElementById('main-card');
+            const pageTitle = document.getElementById('page-title');
+            const secretKeyTextarea = document.getElementById('secret-key-textarea');
+            const dynamicContent = document.getElementById('dynamic-content');
+            const codeList = document.getElementById('code-list');
+            const messageBox = document.getElementById('message-box');
+            const copyAllButton = document.getElementById('copy-all-button');
+
+            // 语言包
+            const translations = {
+                zh: {
+                    title: 'TOTP 代码生成器',
+                    placeholder: '请输入 Base32 密钥，每行一个',
+                    timerPrefix: '倒计时',
+                    copySuccess: '已复制到剪贴板！',
+                    invalidKey: '无效密钥',
+                    copyAllButton: '一键复制所有代码'
+                }
+            };
+            
+            // 默认语言设置为中文
+            const currentLang = 'zh';
+
+            // TOTP 算法参数
+            const timeStep = 30; // 30秒
+            const codeLength = 6;
+            
+            let timerInterval;
+
+            /**
+             * Base32 解码函数。
+             * @param {string} encoded - Base32 编码的字符串。
+             * @returns {Uint8Array} 解码后的字节数组。
+             */
+            function base32Decode(encoded) {
+                const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+                let bits = '';
+                let result = [];
+                encoded = encoded.toUpperCase().replace(/=/g, '');
+
+                for (let i = 0; i < encoded.length; i++) {
+                    const char = encoded[i];
+                    const val = alphabet.indexOf(char);
+                    if (val === -1) {
+                        return null;
+                    }
+                    bits += val.toString(2).padStart(5, '0');
+                }
+
+                for (let i = 0; i < bits.length; i += 8) {
+                    const byte = bits.substring(i, i + 8);
+                    if (byte.length === 8) {
+                        result.push(parseInt(byte, 2));
+                    }
+                }
+                return new Uint8Array(result);
+            }
+
+            /**
+             * 生成 TOTP 验证码。
+             * @param {string} secret - Base32 编码的密钥。
+             * @returns {string} 6位TOTP代码。
+             */
+            function generateTOTP(secret) {
+                if (!secret) {
+                    return '------';
+                }
+
+                const decodedSecret = base32Decode(secret);
+                if (!decodedSecret) {
+                    return translations[currentLang].invalidKey;
+                }
+
+                const epoch = Math.floor(Date.now() / 1000);
+                let timeStepCounter = Math.floor(epoch / timeStep);
+
+                const counterBuffer = new Uint8Array(8);
+                for (let i = 7; i >= 0; i--) {
+                    counterBuffer[i] = timeStepCounter & 0xff;
+                    timeStepCounter >>= 8;
+                }
+                
+                const secretWordArray = CryptoJS.lib.WordArray.create(decodedSecret);
+                const counterWordArray = CryptoJS.lib.WordArray.create(counterBuffer);
+
+                const hmacHex = CryptoJS.HmacSHA1(counterWordArray, secretWordArray).toString();
+
+                const hmac = new Uint8Array(hmacHex.match(/.{2}/g).map(byte => parseInt(byte, 16)));
+                
+                const offset = hmac[hmac.length - 1] & 0xf;
+                const truncatedHash =
+                    ((hmac[offset] & 0x7f) << 24) |
+                    ((hmac[offset + 1] & 0xff) << 16) |
+                    ((hmac[offset + 2] & 0xff) << 8) |
+                    (hmac[offset + 3] & 0xff);
+                
+                let code = truncatedHash % Math.pow(10, codeLength);
+
+                return String(code).padStart(codeLength, '0');
+            }
+
+            /**
+             * 复制当前代码到剪贴板。
+             */
+            function copyToClipboard(code) {
+                if (code === '------' || code === translations[currentLang].invalidKey) {
+                    return;
+                }
+                
+                const tempInput = document.createElement('textarea');
+                tempInput.value = code;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+
+                messageBox.textContent = translations[currentLang].copySuccess;
+                messageBox.classList.remove('hidden');
+                messageBox.classList.add('flex');
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                    messageBox.classList.remove('flex');
+                }, 2000);
+            }
+
+            // 更新单个代码的倒计时和进度条
+            function updateCodeCards() {
+                const listItems = codeList.querySelectorAll('.code-item');
+                listItems.forEach(item => {
+                    const secret = item.dataset.secret;
+                    const timerDisplay = item.querySelector('.timer-display');
+                    const progressBar = item.querySelector('.progress-bar');
+                    const codeDisplay = item.querySelector('.code-display');
+                    
+                    const epoch = Math.floor(Date.now() / 1000);
+                    const secondsLeft = timeStep - (epoch % timeStep);
+                    const progress = (secondsLeft / timeStep) * 100;
+                    
+                    timerDisplay.textContent = `${translations[currentLang].timerPrefix}: ${secondsLeft}s`;
+                    progressBar.style.transform = `scaleX(${progress / 100})`;
+
+                    if (secondsLeft === timeStep) {
+                        const newCode = generateTOTP(secret);
+                        codeDisplay.textContent = newCode;
+                    }
+                });
+            }
+
+            // 生成并显示所有代码
+            function generateAndDisplayAllCodes() {
+                const secrets = secretKeyTextarea.value.split('\n').map(s => s.trim()).filter(s => s);
+                
+                codeList.innerHTML = '';
+                
+                if (secrets.length === 0) {
+                    pageTitle.classList.remove('fade-out');
+                    pageTitle.classList.add('fade-in');
+                    dynamicContent.classList.add('fade-out');
+                    dynamicContent.classList.remove('fade-in');
+                    clearInterval(timerInterval);
+                    return;
+                }
+
+                pageTitle.classList.add('fade-out');
+                pageTitle.classList.remove('fade-in');
+                dynamicContent.classList.add('fade-in');
+                dynamicContent.classList.remove('fade-out');
+                
+                secrets.forEach(secret => {
+                    const code = generateTOTP(secret);
+                    const listItem = document.createElement('div');
+                    listItem.classList.add('code-card', 'text-center', 'space-y-2', 'code-item');
+                    
+                    listItem.dataset.secret = secret;
+
+                    listItem.innerHTML = `
+                        <div class="text-sm text-gray-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis w-full px-2">${secret}</div>
+                        <div class="flex items-center justify-center space-x-4">
+                            <span class="code-display text-4xl md:text-5xl font-extrabold text-[#22c55e]">${code}</span>
+                        </div>
+                        <div class="flex flex-col items-center w-full mt-2">
+                            <p class="timer-display text-gray-400 font-semibold mb-1"></p>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar"></div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    listItem.querySelector('.code-display').addEventListener('click', (event) => {
+                        copyToClipboard(event.target.textContent);
+                    });
+
+                    codeList.appendChild(listItem);
+                });
+
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                }
+                timerInterval = setInterval(updateCodeCards, 1000);
+                updateCodeCards();
+            }
+
+            // 事件监听器
+            secretKeyTextarea.addEventListener('input', generateAndDisplayAllCodes);
+            
+            copyAllButton.addEventListener('click', () => {
+                const codes = Array.from(document.querySelectorAll('.code-display')).map(el => el.textContent);
+                const validCodes = codes.filter(code => code !== '------' && code !== translations[currentLang].invalidKey);
+                if (validCodes.length > 0) {
+                    copyToClipboard(validCodes.join('\n'));
+                }
+            });
+
+            // 页面加载时初始化
+            pageTitle.textContent = translations[currentLang].title;
+            secretKeyTextarea.placeholder = translations[currentLang].placeholder;
+            copyAllButton.textContent = translations[currentLang].copyAllButton;
+            generateAndDisplayAllCodes();
+        });
+    </script>
+</body>
+</html>
