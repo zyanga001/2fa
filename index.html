@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TOTP 代码生成器</title>
+    <title>2FA 验证码生成器</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
@@ -96,7 +96,7 @@
             <!-- 动态内容区域 -->
             <div id="dynamic-content" class="fade-out">
                 <button id="copy-all-button" class="w-full px-6 py-3 mt-4 mb-4 bg-[#22c55e] text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition duration-300 focus:outline-none focus:ring-2 focus:ring-[#22c55e] focus:ring-offset-2 focus:ring-offset-[#ffffff]">
-                    一键复制所有代码
+                    一键复制所有验证码
                 </button>
                 <div id="code-list" class="space-y-4">
                     <!-- 验证码卡片将动态插入这里 -->
@@ -123,12 +123,12 @@
             // 语言包
             const translations = {
                 zh: {
-                    title: 'TOTP 代码生成器',
+                    title: '2FA 验证码生成器',
                     placeholder: '请输入 Base32 密钥，每行一个',
                     timerPrefix: '倒计时',
                     copySuccess: '已复制到剪贴板！',
                     invalidKey: '无效密钥',
-                    copyAllButton: '一键复制所有代码'
+                    copyAllButton: '一键复制所有验证码'
                 }
             };
             
