@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2FA 验证码生成器</title>
+    <!-- Favicon: Using a placeholder that matches the app's grey/white theme -->
+    <link rel="icon" href="https://placehold.co/32x32/475569/ffffff?text=2FA" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
@@ -85,7 +87,7 @@
         /* 强制移除 textarea 的垂直滚动条 */
         #secret-key-textarea {
             overflow-y: hidden !important;
-            -ms-overflow-style: none;  /* IE and Edge */
+            -ms-overflow-style: none;  /* IE 和 Edge */
         }
         #secret-key-textarea::-webkit-scrollbar {
             display: none; /* Chrome, Safari, Opera */
