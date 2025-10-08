@@ -13,10 +13,12 @@
             background-color: #ffffff; /* 白色背景 */
             color: #374151; /* 深灰色文字 */
         }
+        /* 针对验证码，使用等宽字体，增加字间距，确保清晰突出 */
         .code-display {
             letter-spacing: 0.25em;
             cursor: pointer;
-            text-shadow: 0 0 10px rgba(34, 197, 94, 0.3); /* 鲜艳的青绿色光晕 */
+            /* 颜色已替换为柔和的灰岩色 */
+            text-shadow: 0 0 10px rgba(71, 85, 105, 0.2); /* 柔和灰岩色光晕 */
         }
         .progress-bar-container {
             height: 6px;
@@ -28,7 +30,8 @@
         .progress-bar {
             height: 100%;
             width: 100%;
-            background-color: #22c55e; /* 鲜艳的青绿色进度条 */
+            /* 颜色已替换为柔和的灰岩色 */
+            background-color: #475569; /* 灰岩色进度条 */
             transition: transform 1s linear;
         }
         .fade-out {
@@ -41,69 +44,85 @@
         .fade-in {
             opacity: 1;
             pointer-events: auto;
-            max-height: 500px;
+            max-height: 5000px; /* 增加 max-height 以适应多行卡片 */
             transition: opacity 0.3s ease-in, max-height 0.3s ease-in;
         }
         .flex-container {
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start; /* 默认：顶部对齐 */
             align-items: center;
             min-height: 100vh;
+            padding-top: 2rem; /* 顶部内边距 */
+        }
+        /* 输入框为空时，实现全屏垂直居中 */
+        .center-content {
+            justify-content: center;
         }
         #message-box {
             position: fixed; /* 使用 fixed 定位 */
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            top: 50%;       /* 垂直居中 */
+            left: 50%;      /* 水平居中 */
+            transform: translate(-50%, -50%); /* 调整为完全居中 */
             z-index: 10;
-            background-color: #22c55e; /* 绿色背景 */
+            /* 颜色已替换为柔和的灰岩色 */
+            background-color: #475569; /* 灰岩色背景 */
             color: #ffffff;
             padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         .code-card {
             background-color: #f3f4f6; /* 卡片背景色 */
             border: 1px solid #d1d5db; /* 卡片边框 */
-            border-radius: 0.5rem;
             padding: 1.5rem;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
-        }
-        /* 批量模式下的卡片间距 */
-        #code-list .code-card:not(:first-child) {
-            margin-top: 1rem;
         }
         #input-section {
             padding: 2rem;
             background-color: #f3f4f6; /* 输入框区域背景色 */
             border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
+        }
+        /* 强制移除 textarea 的垂直滚动条 */
+        #secret-key-textarea {
+            overflow-y: hidden !important;
+            -ms-overflow-style: none;  /* IE and Edge */
+        }
+        #secret-key-textarea::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
         }
     </style>
 </head>
 <body class="p-4">
 
     <div class="flex-container">
-        <div id="main-card" class="max-w-md w-full relative transition-all duration-300">
-            <h1 id="page-title" class="text-3xl md:text-4xl font-bold text-center mb-6 text-gray-800">TOTP 代码生成器</h1>
-            
-            <div id="input-section">
-                <textarea id="secret-key-textarea" placeholder="请输入 Base32 密钥，每行一个"
-                    class="w-full h-24 p-3 bg-[#f3f4f6] border border-[#d1d5db] rounded-lg text-gray-800 placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-[#22c55e] transition duration-300"></textarea>
+        <div class="w-full relative transition-all duration-300"> <!-- Main Wrapper for full width -->
+        
+            <!-- Section for Title and Input (Constrained and Centered) -->
+            <div class="max-w-md mx-auto">
+                 <h1 id="page-title" class="text-3xl md:text-4xl font-bold text-center mb-6 text-gray-800">TOTP 代码生成器</h1>
+                
+                <div id="input-section" class="mb-6 rounded-xl"> <!-- 应用 rounded-xl -->
+                    <!-- resize-none 移除了拖动调整大小的功能 -->
+                    <textarea id="secret-key-textarea" placeholder="请输入 Base32 密钥，每行一个"
+                        class="w-full h-24 p-3 bg-[#f3f4f6] border border-[#d1d5db] rounded-xl text-gray-800 placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-[#475569] transition duration-300 resize-none"></textarea>
+                </div>
             </div>
-
-            <!-- 动态内容区域 -->
-            <div id="dynamic-content" class="fade-out">
-                <button id="copy-all-button" class="w-full px-6 py-3 mt-4 mb-4 bg-[#22c55e] text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition duration-300 focus:outline-none focus:ring-2 focus:ring-[#22c55e] focus:ring-offset-2 focus:ring-offset-[#ffffff]">
+            
+            <!-- Dynamic Content (Wider Grid Layout for Adaptive Display) -->
+            <div id="dynamic-content" class="fade-out max-w-5xl mx-auto px-4"> 
+                
+                <!-- 按钮颜色和 hover 效果已调整为灰岩色，并使用 rounded-xl -->
+                <button id="copy-all-button" class="w-full px-6 py-3 mt-4 mb-4 bg-[#475569] text-white font-semibold rounded-xl shadow-md hover:bg-[#334155] transition duration-300 focus:outline-none focus:ring-2 focus:ring-[#475569] focus:ring-offset-2 focus:ring-offset-[#ffffff]">
                     一键复制所有验证码
                 </button>
-                <div id="code-list" class="space-y-4">
+                
+                <!-- 响应式网格布局 -->
+                <div id="code-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-4">
                     <!-- 验证码卡片将动态插入这里 -->
                 </div>
             </div>
 
-            <div id="message-box" class="hidden">
+            <div id="message-box" class="hidden rounded-xl"> <!-- 应用 rounded-xl -->
                 已复制到剪贴板！
             </div>
         </div>
@@ -112,7 +131,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // 获取所有需要的 DOM 元素
-            const mainCard = document.getElementById('main-card');
+            const flexContainer = document.querySelector('.flex-container'); // 用于动态居中
             const pageTitle = document.getElementById('page-title');
             const secretKeyTextarea = document.getElementById('secret-key-textarea');
             const dynamicContent = document.getElementById('dynamic-content');
@@ -251,6 +270,7 @@
                     const progress = (secondsLeft / timeStep) * 100;
                     
                     timerDisplay.textContent = `${translations[currentLang].timerPrefix}: ${secondsLeft}s`;
+                    // 进度条的动画效果
                     progressBar.style.transform = `scaleX(${progress / 100})`;
 
                     if (secondsLeft === timeStep) {
@@ -267,33 +287,53 @@
                 codeList.innerHTML = '';
                 
                 if (secrets.length === 0) {
-                    pageTitle.classList.remove('fade-out');
-                    pageTitle.classList.add('fade-in');
+                    // 当没有密钥时，垂直居中显示标题和输入框
+                    flexContainer.classList.add('center-content'); 
                     dynamicContent.classList.add('fade-out');
                     dynamicContent.classList.remove('fade-in');
                     clearInterval(timerInterval);
                     return;
                 }
 
-                pageTitle.classList.add('fade-out');
-                pageTitle.classList.remove('fade-in');
+                // 当有密钥时，顶部对齐
+                flexContainer.classList.remove('center-content');
                 dynamicContent.classList.add('fade-in');
                 dynamicContent.classList.remove('fade-out');
                 
-                secrets.forEach(secret => {
+                secrets.forEach((secret, index) => { // 使用 index 来生成账户标签
                     const code = generateTOTP(secret);
                     const listItem = document.createElement('div');
-                    listItem.classList.add('code-card', 'text-center', 'space-y-2', 'code-item');
+                    // 应用 rounded-xl 到卡片
+                    listItem.classList.add('code-card', 'rounded-xl', 'text-center', 'space-y-2', 'code-item');
                     
                     listItem.dataset.secret = secret;
 
+                    // 生成账户标签 (账户1, 账户2, ...)
+                    const accountLabel = `账户${index + 1}`;
+
                     listItem.innerHTML = `
-                        <div class="text-sm text-gray-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis w-full px-2">${secret}</div>
+                        <!-- 账户标签和密钥：同一行显示，账户靠左，密钥居中 -->
+                        <div class="relative w-full mb-2 h-6">
+                            <!-- 账户标签 (左对齐) -->
+                            <!-- 颜色已替换为柔和的灰岩色 -->
+                            <div class="absolute left-1 top-1 text-lg font-bold text-[#475569] leading-none">${accountLabel}:</div>
+                            
+                            <!-- 密钥本身 (居中对齐) -->
+                            <div class="flex items-center justify-center w-full h-full transform translate-x-3">
+                                <!-- 密钥内容：颜色已替换为柔和的灰岩色 -->
+                                <div class="text-sm font-bold text-[#475569] whitespace-nowrap overflow-hidden text-ellipsis max-w-full px-2 leading-none">
+                                    ${secret}
+                                </div>
+                            </div>
+                        </div>
                         <div class="flex items-center justify-center space-x-4">
-                            <span class="code-display text-4xl md:text-5xl font-extrabold text-[#22c55e]">${code}</span>
+                            <!-- 验证码：字体尺寸调整为 text-4xl sm:text-5xl，在网格中更协调 -->
+                            <!-- 颜色已替换为柔和的灰岩色 -->
+                            <span class="code-display text-4xl sm:text-5xl font-extrabold text-[#475569] font-mono">${code}</span>
                         </div>
                         <div class="flex flex-col items-center w-full mt-2">
-                            <p class="timer-display text-gray-400 font-semibold mb-1"></p>
+                            <!-- 倒计时 -->
+                            <p class="timer-display text-gray-500 font-semibold mb-1"></p>
                             <div class="progress-bar-container">
                                 <div class="progress-bar"></div>
                             </div>
@@ -313,6 +353,15 @@
                 timerInterval = setInterval(updateCodeCards, 1000);
                 updateCodeCards();
             }
+
+            // --- 解决浏览器挂起导致的计算中断问题问题：自动校准 ---
+            document.addEventListener('visibilitychange', () => {
+                // 当标签页从后台切换到前台时，强制重新生成和显示所有代码，以消除时间漂移。
+                if (document.visibilityState === 'visible') {
+                    // console.log("Tab is now visible. Forcing TOTP recalibration.");
+                    generateAndDisplayAllCodes();
+                }
+            });
 
             // 事件监听器
             secretKeyTextarea.addEventListener('input', generateAndDisplayAllCodes);
