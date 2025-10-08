@@ -109,15 +109,16 @@
             </div>
             
             <!-- Dynamic Content (Wider Grid Layout for Adaptive Display) -->
-            <div id="dynamic-content" class="fade-out max-w-5xl mx-auto px-4"> 
+            <!-- 移除 max-w-5xl 和 mx-auto，让内容充分利用屏幕宽度 -->
+            <div id="dynamic-content" class="fade-out w-full px-4 md:px-8"> 
                 
                 <!-- 按钮颜色和 hover 效果已调整为灰岩色，并使用 rounded-xl -->
-                <button id="copy-all-button" class="w-full px-6 py-3 mt-4 mb-4 bg-[#475569] text-white font-semibold rounded-xl shadow-md hover:bg-[#334155] transition duration-300 focus:outline-none focus:ring-2 focus:ring-[#475569] focus:ring-offset-2 focus:ring-offset-[#ffffff]">
+                <button id="copy-all-button" class="w-full max-w-7xl mx-auto block px-6 py-3 mt-4 mb-4 bg-[#475569] text-white font-semibold rounded-xl shadow-md hover:bg-[#334155] transition duration-300 focus:outline-none focus:ring-2 focus:ring-[#475569] focus:ring-offset-2 focus:ring-offset-[#ffffff]">
                     一键复制所有验证码
                 </button>
                 
-                <!-- 响应式网格布局 -->
-                <div id="code-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-4">
+                <!-- 响应式网格布局，现在可以铺满整个屏幕宽度（除了边距） -->
+                <div id="code-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pt-4 max-w-7xl mx-auto">
                     <!-- 验证码卡片将动态插入这里 -->
                 </div>
             </div>
