@@ -41,13 +41,15 @@
             pointer-events: none;
             max-height: 0;
             margin-bottom: 0;
-            transition: opacity 0.3s ease-out, max-height 0.3s ease-out, margin-bottom 0.3s ease-out;
+            /* 提升过渡时间到 0.5s，让消失过程更平滑 */
+            transition: opacity 0.5s ease-out, max-height 0.5s ease-out, margin-bottom 0.5s ease-out;
         }
         .fade-in {
             opacity: 1;
             pointer-events: auto;
             max-height: 5000px; /* 增加 max-height 以适应多行卡片 */
-            transition: opacity 0.3s ease-in, max-height 0.3s ease-in;
+            /* 提升过渡时间到 0.5s */
+            transition: opacity 0.5s ease-in, max-height 0.5s ease-in;
         }
         .flex-container {
             display: flex;
@@ -56,6 +58,8 @@
             align-items: center;
             min-height: 100vh;
             padding-top: 2rem; /* 顶部内边距 */
+            /* 新增：添加过渡效果，使内容移动和居中时更平滑 */
+            transition: all 0.5s ease-in-out; 
         }
         /* 输入框为空时，实现全屏垂直居中 */
         .center-content {
@@ -282,6 +286,31 @@
                     }
                 });
             }
+            
+            /**
+             * 掩码密钥，只显示前12位，并将第8位和第10位替换为*。
+             * @param {string} secret - 原始 Base32 密钥。
+             * @returns {string} 掩码后的显示密钥。
+             */
+            function getMaskedSecret(secret) {
+                if (!secret) return '';
+
+                // 仅取前12位
+                let displayed = secret.substring(0, 12);
+                let chars = displayed.split(''); 
+
+                // 掩码第8位 (0-based index 7)
+                if (chars.length > 7) {
+                    chars[7] = '*';
+                }
+                
+                // 掩码第10位 (0-based index 9)
+                if (chars.length > 9) {
+                    chars[9] = '*';
+                }
+                
+                return chars.join('');
+            }
 
             // 生成并显示所有代码
             function generateAndDisplayAllCodes() {
@@ -290,7 +319,7 @@
                 codeList.innerHTML = '';
                 
                 if (secrets.length === 0) {
-                    // 当没有密钥时，垂直居中显示标题和输入框
+                    // 当没有密钥时，垂直居中显示标题和输入框 (平滑过渡)
                     flexContainer.classList.add('center-content'); 
                     dynamicContent.classList.add('fade-out');
                     dynamicContent.classList.remove('fade-in');
@@ -305,6 +334,10 @@
                 
                 secrets.forEach((secret, index) => { // 使用 index 来生成账户标签
                     const code = generateTOTP(secret);
+                    
+                    // 获取掩码后的密钥用于显示
+                    const displaySecret = getMaskedSecret(secret);
+
                     const listItem = document.createElement('div');
                     // 应用 rounded-xl 到卡片
                     listItem.classList.add('code-card', 'rounded-xl', 'text-center', 'space-y-2', 'code-item');
@@ -325,7 +358,7 @@
                             <div class="flex items-center justify-center w-full h-full transform translate-x-3">
                                 <!-- 密钥内容：颜色已替换为柔和的灰岩色 -->
                                 <div class="text-sm font-bold text-[#475569] whitespace-nowrap overflow-hidden text-ellipsis max-w-full px-2 leading-none">
-                                    ${secret}
+                                    ${displaySecret}
                                 </div>
                             </div>
                         </div>
